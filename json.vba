@@ -232,20 +232,17 @@ Private Sub ParseCore(ByRef Value)
         off = off + 4
         Value = Null
     Case Else
-        Dim length, number, ac
+        Dim length, org, ac
         length = Len(biwaz)
+        org = off
         If ch = "-" Then
             off = off + 1
             If length < off Then Err.Raise 32000, "json parse", "数値が記号 - の後、途切れています" ' The number is broken after the symbol-
-            number = ch
             ch = Mid(biwaz, off, 1)
-        Else
-            number = ""
         End If
 
         ' integer
         off = off + 1
-        number = number + ch
         ac = Asc(ch)
         If 48 < ac And ac < 58 Then
             Do Until length < off
@@ -253,10 +250,9 @@ Private Sub ParseCore(ByRef Value)
                 ac = Asc(ch)
                 If ac < 48 Or 58 <= ac Then Exit Do
                 off = off + 1
-                number = number + ch
             Loop
         ElseIf ac <> 48 Then
-            Err.Raise 32000, "json parse", "不明なトークンです (" & number & ")" ' Unknown token ( & number & )
+            Err.Raise 32000, "json parse", "不明なトークンです (" & Mid(biwaz, org, off - org) & ")" ' Unknown token ( & mid(biwaz, org, off-org) & )
         End If
 
         ' fraction
@@ -264,16 +260,14 @@ Private Sub ParseCore(ByRef Value)
             ch = Mid(biwaz, off, 1)
             If ch = "." Then
                 off = off + 1
-                number = number + ch
-                If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & number & ")" ' The numbers are interrupted in the middle ( & number & )
+                If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
 
                 ch = Mid(biwaz, off, 1)
                 ac = Asc(ch)
-                If ac < 48 Or 58 <= ac Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & number & ")" ' The numbers are interrupted in the middle ( & number & )
+                If ac < 48 Or 58 <= ac Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
 
                 Do
                     off = off + 1
-                    number = number + ch
                     If length < off Then Exit Do
                     ch = Mid(biwaz, off, 1)
                     ac = Asc(ch)
@@ -286,23 +280,20 @@ Private Sub ParseCore(ByRef Value)
             Select Case ch
             Case "E", "e"
                 off = off + 1
-                number = number + ch
-                If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & number & ")" ' The numbers are interrupted in the middle ( & number & )
+                If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
 
                 ch = Mid(biwaz, off, 1)
                 Select Case ch
                 Case "-", "+"
                     off = off + 1
-                    number = number + ch
-                    If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & number & ")" ' The numbers are interrupted in the middle ( & number & )
+                    If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
                     ch = Mid(biwaz, off, 1)
                 End Select
 
                 ac = Asc(ch)
-                If ac < 48 Or 58 <= ac Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & number & ")" ' The numbers are interrupted in the middle ( & number & )
+                If ac < 48 Or 58 <= ac Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
                 Do
                     off = off + 1
-                    number = number + ch
                     If length < off Then Exit Do
                     ch = Mid(biwaz, off, 1)
                     ac = Asc(ch)
@@ -311,7 +302,7 @@ Private Sub ParseCore(ByRef Value)
             End Select
         End If
 
-        Value = CDbl(number)
+        Value = CDbl(Mid(biwaz, org, off - org))
     End Select
 End Sub
 

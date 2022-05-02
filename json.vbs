@@ -141,9 +141,9 @@ private sub ParseCore(byref value)
 		end if
 
 		do
-			if ch <> """" then err.raise 32000, "json parse", "オブジェクトのキーが検出できません"
+			if ch <> """" then err.raise 32000, "json parse", "オブジェクトのキーが検出できません" ' Unable to find key ob object
 			off = off + 1
-			if mid(biwaz, off, 1) <> ":" then err.raise 32000, "json parse", "オブジェクトのキー" & designs(idx) & "の次に ':' を検出できません"
+			if mid(biwaz, off, 1) <> ":" then err.raise 32000, "json parse", "オブジェクトのキー" & designs(idx) & "の次に ':' を検出できません" ' Unable to find ':' next to object key & designs(idx)
 			ch = designs(idx)
 			idx = idx + 1
 
@@ -157,7 +157,7 @@ private sub ParseCore(byref value)
 				off = off + 1
 				exit sub
 			elseif ch <> "," then
-				err.raise 32000, "json parse", "オブジェクトのメンバー """ & child & """:.. の次に ',' を検出できません"
+				err.raise 32000, "json parse", "オブジェクトのメンバー """ & child & """:.. の次に ',' を検出できません" ' Unable to find ',' next to object member & child & : ..
 			end if
 
 			off = off + 1
@@ -182,7 +182,7 @@ private sub ParseCore(byref value)
 				off = off + 1
 				exit sub
 			elseif ch <> "," then
-				err.raise 32000, "json parse", "配列要素の次に ',' を検出できません"
+				err.raise 32000, "json parse", "配列要素の次に ',' を検出できません" ' Unable to find ',' next to array element
 			end if
 			off = off + 1
 		loop
@@ -191,32 +191,29 @@ private sub ParseCore(byref value)
 		value = designs(idx)
 		idx = idx + 1
 	case "t"
-		if mid(biwaz, off, 4) <> "true" then err.raise 32000, "json parse", "'t' の次に 'rue' が検出できません"
+		if mid(biwaz, off, 4) <> "true" then err.raise 32000, "json parse", "'t' の次に 'rue' が検出できません" ' 'rue' cannot be detected after 't'
 		off = off + 4
 		value = true
 	case "f"
-		if mid(biwaz, off, 5) <> "false" then err.raise 32000, "json parse", "'f' の次に 'alse' が検出できません"
+		if mid(biwaz, off, 5) <> "false" then err.raise 32000, "json parse", "'f' の次に 'alse' が検出できません" ' 'alse' cannot be detected after 'f'
 		off = off + 5
 		value = false
 	case "n"
-		if mid(biwaz, off, 4) <> "null" then err.raise 32000, "json parse", "'n' の次に 'ull' が検出できません"
+		if mid(biwaz, off, 4) <> "null" then err.raise 32000, "json parse", "'n' の次に 'ull' が検出できません" ' 'ull' cannot be detected after 'n'
 		off = off + 4
 		value = null
 	case else
-		dim length, number, ac
+		dim length, org, ac
 		length = len(biwaz)
+		org = off
 		if ch = "-" then
 			off = off + 1
-			if length < off then err.raise 32000, "json parse", "数値が記号 - の後、途切れています"
-			number = ch
+			if length < off then err.raise 32000, "json parse", "数値が記号 - の後、途切れています" ' The number is broken after the symbol-
 			ch = mid(biwaz, off, 1)
-		else
-			number = ""
 		end if
 
 		' integer
 		off = off + 1
-		number = number + ch
 		ac = Asc(ch)
 		if 48 < ac and ac < 58 then
 			do until length < off
@@ -224,10 +221,9 @@ private sub ParseCore(byref value)
 				ac = asc(ch)
 				if ac < 48 or 58 <= ac then exit do
 				off = off + 1
-				number = number + ch
 			loop
 		elseif ac <> 48 then
-			err.raise 32000, "json parse", "不明なトークンです (" & number & ")"
+			err.raise 32000, "json parse", "不明なトークンです (" & mid(biwaz, org, off-org) & ")" ' Unknown token ( & mid(biwaz, org, off-org) & )
 		end if
 
 		' fraction
@@ -235,16 +231,14 @@ private sub ParseCore(byref value)
 			ch = mid(biwaz, off, 1)
 			if ch = "." then
 				off = off + 1
-				number = number + ch
-				if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & number & ")"
+				if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
 
 				ch = mid(biwaz, off, 1)
 				ac = asc(ch)
-				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "数値が途中で途切れています (" & number & ")"
+				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
 
 				do
 					off = off + 1
-					number = number + ch
 					if length < off then exit do
 					ch = mid(biwaz, off, 1)
 					ac = asc(ch)
@@ -257,23 +251,20 @@ private sub ParseCore(byref value)
 			select case ch
 			case "E", "e"
 				off = off + 1
-				number = number + ch
-				if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & number & ")"
+				if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
 
 				ch = mid(biwaz, off, 1)
 				select case ch
 				case "-", "+"
 					off = off + 1
-					number = number + ch
-					if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & number & ")"
+					if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
 					ch = mid(biwaz, off, 1)
 				end select
 
 				ac = asc(ch)
-				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "数値が途中で途切れています (" & number & ")"
+				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
 				do
 					off = off + 1
-					number = number + ch
 					if length < off then exit do
 					ch = mid(biwaz, off, 1)
 					ac = asc(ch)
@@ -282,7 +273,7 @@ private sub ParseCore(byref value)
 			end select
 		end if
 
-		value = cdbl(number)
+		value = cdbl(mid(biwaz, org, off-org))
 	end select
 end sub
 
@@ -293,7 +284,7 @@ public sub Parse(s, byref value)
 
 	' 制御文字検出第１ステップ
 	for i = 0 to 1
-		if 0 < instr(s, chr(i)) then err.raise 32000, "json parse", "禁則文字chr(" & i & ")が使われています"
+		if 0 < instr(s, chr(i)) then err.raise 32000, "json parse", "禁則文字chr(" & i & ")が使われています" ' illegal chr ( & i & ) are used
 	next
 
 	' 文字列配列の抽出
@@ -315,7 +306,7 @@ public sub Parse(s, byref value)
 
 	' 制御文字検出第２ステップ
 	for i = 2 to 31
-		if 0 < instr(cs, chr(i)) then err.raise 32000, "json parse", "禁則文字 chr(" & i & ") が使われています"
+		if 0 < instr(cs, chr(i)) then err.raise 32000, "json parse", "禁則文字 chr(" & i & ") が使われています" ' illegal chr ( & i & ) are used
 	next
 
 	' エスケープ文字の復元
@@ -332,7 +323,7 @@ public sub Parse(s, byref value)
 	end if
 
 	' 無効なエスケープ文字の検出
-	if 0 < instr(cs, "\") then err.raise 32000, "json parse", "無効なエスケープ '\" & mid(cs, instr(cs, "\")+1, 1) & "' が使われています"
+	if 0 < instr(cs, "\") then err.raise 32000, "json parse", "無効なエスケープ '\" & mid(cs, instr(cs, "\")+1, 1) & "' が使われています" ' Invalid escape '\ & Mid (cs, InStr (cs, "\") + 1, 1) & ' is used
 
 	idx = 0
 	designs = split(replace(cs, chr(1), "\"), chr(0))
@@ -343,7 +334,7 @@ public sub Parse(s, byref value)
 	ParseCore value
 	designs = null
 
-	if off <= len(biwaz) then err.raise 32000, "json parse", "json が完結していません ... " & mid(biwaz, off, 6)
+	if off <= len(biwaz) then err.raise 32000, "json parse", "json が完結していません ... " & mid(biwaz, off, 6) ' json is not complete ... & Mid (biwaz, off, 6)
 	biwaz = null
 end sub
 
