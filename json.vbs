@@ -52,7 +52,7 @@ private function StringifyTab(obj, byval off)
 		if isnull(whitespace) then
 			StringifyTab = """" & obj & """"
 		else
-			StringifyTab = """" & replace(replace(replace(replace(replace(replace(replace(obj, "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), "/", "\/") & """"
+			StringifyTab = """" & replace(replace(replace(replace(replace(replace(replace(replace(obj, "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\"""), "/", "\/") & """"
 		end if
 	case 9
 		if 0 < obj.count then
@@ -116,7 +116,7 @@ end function
 public function Stringify(obj, ws)
 	whitespace = ws
 	if isnull(whitespace) then
-		Stringify = replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), "/", "\/")
+		Stringify = replace(replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\"""), "/", "\/")
 	else
 		Stringify = StringifyTab(obj, 0)
 	end if

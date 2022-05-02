@@ -53,7 +53,7 @@ Private Function StringifyTab(obj, ByVal off)
     tp = VarType(obj)
     Select Case tp
     Case vbString
-        StringifyTab = """" & Replace(Replace(Replace(Replace(Replace(Replace(Replace(obj, "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), "/", "\/") & """"
+        StringifyTab = """" & Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(obj, "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\"""), "/", "\/") & """"
     Case vbObject
         sep = vbCrLf & String(off + 1, vbTab)
         Select Case TypeName(obj)
@@ -143,7 +143,7 @@ End Function
 Public Function Stringify(obj, Optional ws)
     If IsMissing(ws) Then whitespace = Null Else whitespace = ws
     If IsNull(whitespace) Then
-        Stringify = Replace(Replace(Replace(Replace(Replace(Replace(Replace(StringifyTab(obj, 0), "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), "/", "\/")
+        Stringify = Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(StringifyTab(obj, 0), "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\"""), "/", "\/")
     Else
         Stringify = StringifyTab(obj, 0)
     End If
