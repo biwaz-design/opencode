@@ -83,10 +83,8 @@ private function StringifyTab(obj, byval off)
 		if obj then StringifyTab = "true" else StringifyTab = "false"
 	case 7
 		StringifyTab = """" & obj & """"
-	case 17
-		StringifyTab = """--binary data--"""
 	case else
-		if 8192 <= tp then
+		if 8192 <= tp and tp <= 8209 then
 			if -1 < ubound(obj) then
 				redim ary(ubound(obj))
 				i = 0
