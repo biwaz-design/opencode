@@ -311,26 +311,26 @@ Private Sub ParseCore(ByRef value)
 End Sub
 
 Public Sub Parse(s, ByRef value)
-    Dim cs, i, j
+    Dim i, j
 
     For i = 0 To 1
         If 0 < InStr(s, Chr(i)) Then Err.Raise 32000, "json parse", "禁則文字chr(" & i & ")が使われています" ' illegal chr ( & i & ) are used
     Next
     
-    cs = Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", Chr(0)), "\""", Chr(1)), "\b", Chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
+    design = Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", Chr(0)), "\""", Chr(1)), "\b", Chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
 
-    i = InStr(cs, "\u")
+    i = InStr(design, "\u")
     If 0 < i Then
         Do
             j = i
-            cs = Replace(cs, Mid(cs, j, 6), ChrW("&H" & Mid(cs, j + 2, 4)))
-            i = InStr(j + 1, cs, "\u")
+            design = Replace(design, Mid(design, j, 6), ChrW("&H" & Mid(design, j + 2, 4)))
+            i = InStr(j + 1, design, "\u")
         Loop While 0 < i
     End If
 
-    If 0 < InStr(cs, "\") Then Err.Raise 32000, "json parse", "無効なエスケープ '\" & Mid(cs, InStr(cs, "\") + 1, 1) & "' が使われています" ' Invalid escape '\ & Mid (cs, InStr (cs, "\") + 1, 1) & ' is used
+    If 0 < InStr(design, "\") Then Err.Raise 32000, "json parse", "無効なエスケープ '\" & Mid(design, InStr(design, "\") + 1, 1) & "' が使われています" ' Invalid escape '\ & Mid (design, InStr (design, "\") + 1, 1) & ' is used
 
-    biwaz = Split(Replace(cs, Chr(0), "\"), """")
+    biwaz = Split(Replace(design, Chr(0), "\"), """")
     For i = 0 To UBound(biwaz) - 1 Step 2
         biwaz(i) = Replace(biwaz(i), " ", "")
         biwaz(i + 1) = Replace(biwaz(i + 1), Chr(1), """")
@@ -339,7 +339,7 @@ Public Sub Parse(s, ByRef value)
     
     idx = 0
     off = 1
-    design = biwaz(idx)
+    If 0 < UBound(biwaz) Then design = biwaz(idx)
 
     ParseCore value
 
