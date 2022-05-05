@@ -46,6 +46,8 @@
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
 Option Explicit
 
+Private Const isFast = False
+
 Private biwaz, design, off, idx, whitespace
 
 Private Function StringifyTab(obj, ByVal off)
@@ -313,10 +315,7 @@ End Sub
 Public Sub Parse(s, ByRef value)
     Dim i, j
 
-    For i = 0 To 1
-        If 0 < InStr(s, Chr(i)) Then Err.Raise 32000, "json parse", "禁則文字chr(" & i & ")が使われています" ' illegal chr ( & i & ) are used
-    Next
-    
+If isFast Then
     design = Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", Chr(0)), "\""", Chr(1)), "\b", Chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
 
     i = InStr(design, "\u")
@@ -331,19 +330,49 @@ Public Sub Parse(s, ByRef value)
     If 0 < InStr(design, "\") Then Err.Raise 32000, "json parse", "無効なエスケープ '\" & Mid(design, InStr(design, "\") + 1, 1) & "' が使われています" ' Invalid escape '\ & Mid (design, InStr (design, "\") + 1, 1) & ' is used
 
     biwaz = Split(Replace(design, Chr(0), "\"), """")
-    For i = 0 To UBound(biwaz) - 1 Step 2
-        biwaz(i) = Replace(biwaz(i), " ", "")
-        biwaz(i + 1) = Replace(biwaz(i + 1), Chr(1), """")
+    For i = 1 To UBound(biwaz) Step 2
+        biwaz(i) = Replace(biwaz(i), Chr(1), """")
+        biwaz(i + 1) = Replace(biwaz(i + 1), " ", "")
     Next
-    biwaz(UBound(biwaz)) = Replace(biwaz(UBound(biwaz)), " ", "")
+    If 0 < UBound(biwaz) Then design = biwaz(0)
+    design = Replace(design, " ", "")
+Else
+    For Each i In Array(0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
+        If 0 < InStr(s, Chr(i)) Then Err.Raise 32000, "json parse", "禁則文字chr(" & i & ")が使われています" ' illegal chr ( & i & ) are used
+    Next
     
+    design = Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(s, "\\", Chr(0)), "\""", Chr(1)), "\b", Chr(8)), "\f", vbFormFeed), "\/", "/"), "\r", Chr(2)), "\n", Chr(3)), "\t", Chr(4))
+
+    i = InStr(design, "\u")
+    If 0 < i Then
+        Do
+            j = i
+            design = Replace(design, Mid(design, j, 6), ChrW("&H" & Mid(design, j + 2, 4)))
+            i = InStr(j + 1, design, "\u")
+        Loop While 0 < i
+    End If
+
+    If 0 < InStr(design, "\") Then Err.Raise 32000, "json parse", "無効なエスケープ '\" & Mid(design, InStr(design, "\") + 1, 1) & "' が使われています" ' Invalid escape '\ & Mid (design, InStr (design, "\") + 1, 1) & ' is used
+
+    biwaz = Split(Replace(design, Chr(0), "\"), """")
+    For i = 1 To UBound(biwaz) Step 2
+        biwaz(i) = Replace(Replace(Replace(Replace(biwaz(i), Chr(1), """"), Chr(2), vbCr), Chr(3), vbLf), Chr(4), vbTab)
+        biwaz(i + 1) = Replace(Replace(Replace(Replace(biwaz(i + 1), " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+    Next
+    If 0 < UBound(biwaz) Then design = biwaz(0)
+    design = Replace(Replace(Replace(Replace(design, " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+End If
+
     idx = 0
     off = 1
-    If 0 < UBound(biwaz) Then design = biwaz(idx)
 
     ParseCore value
 
-    If off <= Len(biwaz(idx)) Or idx < UBound(biwaz) Then Err.Raise 32000, "json parse", "json が完結していません ... " & Mid(biwaz, off, 6) ' json is not complete ... & Mid (biwaz, off, 6)
+    If 0 < UBound(biwaz) Then
+        If off <= Len(biwaz(idx)) Or idx < UBound(biwaz) Then Err.Raise 32000, "json parse", "json が完結していません ... " ' json is not complete ...
+    Else
+        If off <= Len(design) Then Err.Raise 32000, "json parse", "json が完結していません ... " ' json is not complete ...
+    End If
     biwaz = Null
     design = Null
 End Sub

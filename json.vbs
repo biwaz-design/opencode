@@ -7,9 +7,9 @@
 ' off-the-shelf parser as much as possible, so I devised it. I hope it will be
 ' useful for your work.
 ' -----------------------------------------------------------------------
-' Š®‘S‚ÉƒIƒŠƒWƒiƒ‹‚ÌJSONƒp[ƒT[‚Å‚·‚ªA’N‚ªì‚Á‚Ä‚à\‘¢‚Í‚ ‚Ü‚è•Ï‚í‚ç‚È‚¢‚Æv‚¢‚Ü‚·B
-' Šù»‚Ìƒp[ƒT[‚Ì‘¬“x‚ğ‚Å‚«‚é‚¾‚¯Œüã‚³‚¹‚½‚¢‚Æv‚Á‚½‚Ì‚ÅA‚»‚±‚Ì‚Æ‚±‚ëŠæ’£‚è‚Ü‚µ‚½B
-' ‚¨–ğ‚É—§‚Ä‚ÎK‚¢‚Å‚·B
+' å®Œå…¨ã«ã‚ªãƒªã‚¸ãƒŠãƒ«ã®JSONãƒ‘ãƒ¼ã‚µãƒ¼ã§ã™ãŒã€èª°ãŒä½œã£ã¦ã‚‚æ§‹é€ ã¯ã‚ã¾ã‚Šå¤‰ã‚ã‚‰ãªã„ã¨æ€ã„ã¾ã™ã€‚
+' æ—¢è£½ã®ãƒ‘ãƒ¼ã‚µãƒ¼ã®é€Ÿåº¦ã‚’ã§ãã‚‹ã ã‘å‘ä¸Šã•ã›ãŸã„ã¨æ€ã£ãŸã®ã§ã€ãã“ã®ã¨ã“ã‚é ‘å¼µã‚Šã¾ã—ãŸã€‚
+' ãŠå½¹ã«ç«‹ã¦ã°å¹¸ã„ã§ã™ã€‚â€»SHIFT-JISã§ä¿å­˜ã—ãªãŠã—ã¦ã€ã”åˆ©ç”¨ãã ã•ã„ã€‚
 '
 ' * Parse json-string to object
 ' * Stringify object to json-string
@@ -46,7 +46,9 @@
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
 option explicit
 
-Private biwaz, design, off, idx, whitespace
+private const isFast = false
+
+private biwaz, design, off, idx, whitespace
 
 private function StringifyTab(obj, byval off)
 	dim i, tp, sep, ary, key, data
@@ -150,11 +152,11 @@ private sub ParseCore(byref value)
 		end if
 
 		do
-			if ch <> "" then err.raise 32000, "json parse", "ƒIƒuƒWƒFƒNƒg‚ÌƒL[‚ªŒŸo‚Å‚«‚Ü‚¹‚ñ" ' Unable to find key of object
+			if ch <> "" then err.raise 32000, "json parse", "ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚­ãƒ¼ãŒæ¤œå‡ºã§ãã¾ã›ã‚“" ' Unable to find key of object
 			off = 1
 			idx = idx + 2
 			design = biwaz(idx)
-			if mid(design, off, 1) <> ":" then err.raise 32000, "json parse", "ƒIƒuƒWƒFƒNƒg‚ÌƒL[" & design & "‚ÌŸ‚É ':' ‚ğŒŸo‚Å‚«‚Ü‚¹‚ñ" ' Unable to find ':' next to object key & design
+			if mid(design, off, 1) <> ":" then err.raise 32000, "json parse", "ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚­ãƒ¼" & design & "ã®æ¬¡ã« ':' ã‚’æ¤œå‡ºã§ãã¾ã›ã‚“" ' Unable to find ':' next to object key & design
 			off = off + 1
 			ch = biwaz(idx - 1)
 
@@ -167,7 +169,7 @@ private sub ParseCore(byref value)
 				off = off + 1
 				exit sub
 			elseif ch <> "," then
-				err.raise 32000, "json parse", "ƒIƒuƒWƒFƒNƒg‚Ìƒƒ“ƒo[ """ & child & """:.. ‚ÌŸ‚É ',' ‚ğŒŸo‚Å‚«‚Ü‚¹‚ñ" ' Unable to find ',' next to object member & child & : ..
+				err.raise 32000, "json parse", "ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ãƒ¡ãƒ³ãƒãƒ¼ """ & child & """:.. ã®æ¬¡ã« ',' ã‚’æ¤œå‡ºã§ãã¾ã›ã‚“" ' Unable to find ',' next to object member & child & : ..
 			end if
 
 			off = off + 1
@@ -192,22 +194,22 @@ private sub ParseCore(byref value)
 				off = off + 1
 				exit sub
 			elseif ch <> "," then
-				err.raise 32000, "json parse", "”z—ñ—v‘f‚ÌŸ‚É ',' ‚ğŒŸo‚Å‚«‚Ü‚¹‚ñ" ' Unable to find ',' next to array element
+				err.raise 32000, "json parse", "é…åˆ—è¦ç´ ã®æ¬¡ã« ',' ã‚’æ¤œå‡ºã§ãã¾ã›ã‚“" ' Unable to find ',' next to array element
 			end if
 
 			off = off + 1
 			ch = mid(design, off, 1)
 		loop
 	case "t"
-		if mid(design, off, 4) <> "true" then err.raise 32000, "json parse", "'t' ‚ÌŸ‚É 'rue' ‚ªŒŸo‚Å‚«‚Ü‚¹‚ñ" ' 'rue' cannot be detected after 't'
+		if mid(design, off, 4) <> "true" then err.raise 32000, "json parse", "'t' ã®æ¬¡ã« 'rue' ãŒæ¤œå‡ºã§ãã¾ã›ã‚“" ' 'rue' cannot be detected after 't'
 		off = off + 4
 		value = true
 	case "f"
-		if mid(design, off, 5) <> "false" then err.raise 32000, "json parse", "'f' ‚ÌŸ‚É 'alse' ‚ªŒŸo‚Å‚«‚Ü‚¹‚ñ" ' 'alse' cannot be detected after 'f'
+		if mid(design, off, 5) <> "false" then err.raise 32000, "json parse", "'f' ã®æ¬¡ã« 'alse' ãŒæ¤œå‡ºã§ãã¾ã›ã‚“" ' 'alse' cannot be detected after 'f'
 		off = off + 5
 		value = false
 	case "n"
-		if mid(design, off, 4) <> "null" then err.raise 32000, "json parse", "'n' ‚ÌŸ‚É 'ull' ‚ªŒŸo‚Å‚«‚Ü‚¹‚ñ" ' 'ull' cannot be detected after 'n'
+		if mid(design, off, 4) <> "null" then err.raise 32000, "json parse", "'n' ã®æ¬¡ã« 'ull' ãŒæ¤œå‡ºã§ãã¾ã›ã‚“" ' 'ull' cannot be detected after 'n'
 		off = off + 4
 		value = null
 	case else
@@ -216,7 +218,7 @@ private sub ParseCore(byref value)
 		org = off
 		if ch = "-" then
 			off = off + 1
-			if length < off then err.raise 32000, "json parse", "”’l‚ª‹L† - ‚ÌŒãA“rØ‚ê‚Ä‚¢‚Ü‚·" ' The number is broken after the symbol-
+			if length < off then err.raise 32000, "json parse", "æ•°å€¤ãŒè¨˜å· - ã®å¾Œã€é€”åˆ‡ã‚Œã¦ã„ã¾ã™" ' The number is broken after the symbol-
 			ch = mid(design, off, 1)
 		end if
 
@@ -231,7 +233,7 @@ private sub ParseCore(byref value)
 				off = off + 1
 			loop
 		elseif ac <> 48 then
-			err.raise 32000, "json parse", "•s–¾‚Èƒg[ƒNƒ“‚Å‚· (" & mid(design, org, off-org) & ")" ' Unknown token ( & mid(design, org, off-org) & )
+			err.raise 32000, "json parse", "ä¸æ˜ãªãƒˆãƒ¼ã‚¯ãƒ³ã§ã™ (" & mid(design, org, off-org) & ")" ' Unknown token ( & mid(design, org, off-org) & )
 		end if
 
 		' fraction
@@ -239,11 +241,11 @@ private sub ParseCore(byref value)
 			ch = mid(design, off, 1)
 			if ch = "." then
 				off = off + 1
-				if length < off then err.raise 32000, "json parse", "”’l‚ª“r’†‚Å“rØ‚ê‚Ä‚¢‚Ü‚· (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
+				if length < off then err.raise 32000, "json parse", "æ•°å€¤ãŒé€”ä¸­ã§é€”åˆ‡ã‚Œã¦ã„ã¾ã™ (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 
 				ch = mid(design, off, 1)
 				ac = asc(ch)
-				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "”’l‚ª“r’†‚Å“rØ‚ê‚Ä‚¢‚Ü‚· (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
+				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "æ•°å€¤ãŒé€”ä¸­ã§é€”åˆ‡ã‚Œã¦ã„ã¾ã™ (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 
 				do
 					off = off + 1
@@ -259,18 +261,18 @@ private sub ParseCore(byref value)
 			select case ch
 			case "E", "e"
 				off = off + 1
-				if length < off then err.raise 32000, "json parse", "”’l‚ª“r’†‚Å“rØ‚ê‚Ä‚¢‚Ü‚· (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
+				if length < off then err.raise 32000, "json parse", "æ•°å€¤ãŒé€”ä¸­ã§é€”åˆ‡ã‚Œã¦ã„ã¾ã™ (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 
 				ch = mid(design, off, 1)
 				select case ch
 				case "-", "+"
 					off = off + 1
-					if length < off then err.raise 32000, "json parse", "”’l‚ª“r’†‚Å“rØ‚ê‚Ä‚¢‚Ü‚· (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
+					if length < off then err.raise 32000, "json parse", "æ•°å€¤ãŒé€”ä¸­ã§é€”åˆ‡ã‚Œã¦ã„ã¾ã™ (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 					ch = mid(design, off, 1)
 				end select
 
 				ac = asc(ch)
-				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "”’l‚ª“r’†‚Å“rØ‚ê‚Ä‚¢‚Ü‚· (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
+				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "æ•°å€¤ãŒé€”ä¸­ã§é€”åˆ‡ã‚Œã¦ã„ã¾ã™ (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 				do
 					off = off + 1
 					if length < off then exit do
@@ -288,37 +290,64 @@ end sub
 public sub Parse(s, byref value)
 	Dim i, j
 
-	for i = 0 to 1
-		if 0 < instr(s, chr(i)) then err.raise 32000, "json parse", "‹Ö‘¥•¶šchr(" & i & ")‚ªg‚í‚ê‚Ä‚¢‚Ü‚·" ' illegal chr ( & i & ) are used
-	next
+if isFast then
+    design = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", chr(0)), "\""", chr(1)), "\b", chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
 
-	design = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", Chr(0)), "\""", Chr(1)), "\b", Chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
+    i = instr(design, "\u")
+    if 0 < i then
+        do
+            j = i
+            design = replace(design, mid(design, j, 6), chrw("&H" & mid(design, j + 2, 4)))
+            i = instr(j + 1, design, "\u")
+        loop while 0 < i
+    end if
 
-	i = instr(design, "\u")
-	if 0 < i then
-		do
-			j = i
-			design = replace(design, mid(design, j, 6), chrw("&H" & mid(design, j + 2, 4)))
-			i = instr(j + 1, design, "\u")
-		loop while 0 < i
-	end if
+    if 0 < instr(design, "\") then err.raise 32000, "json parse", "ç„¡åŠ¹ãªã‚¨ã‚¹ã‚±ãƒ¼ãƒ— '\" & mid(design, instr(design, "\") + 1, 1) & "' ãŒä½¿ã‚ã‚Œã¦ã„ã¾ã™" ' invalid escape '\ & mid (design, instr (design, "\") + 1, 1) & ' is used
 
-	if 0 < instr(design, "\") then err.raise 32000, "json parse", "–³Œø‚ÈƒGƒXƒP[ƒv '\" & mid(design, instr(design, "\")+1, 1) & "' ‚ªg‚í‚ê‚Ä‚¢‚Ü‚·" ' Invalid escape '\ & Mid (design, InStr (design, "\") + 1, 1) & ' is used
+    biwaz = split(replace(design, chr(0), "\"), """")
+    for i = 1 to ubound(biwaz) step 2
+        biwaz(i) = replace(biwaz(i), chr(1), """")
+        biwaz(i + 1) = replace(biwaz(i + 1), " ", "")
+    next
+    if 0 < ubound(biwaz) then design = biwaz(0)
+    design = replace(design, " ", "")
+else
+    for each i in array(0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
+        if 0 < instr(s, chr(i)) then err.raise 32000, "json parse", "ç¦å‰‡æ–‡å­—chr(" & i & ")ãŒä½¿ã‚ã‚Œã¦ã„ã¾ã™" ' illegal chr ( & i & ) are used
+    next
 
-	biwaz = split(replace(design, chr(0), "\"), """")
-	for i = 0 to ubound(biwaz) - 1 step 2
-		biwaz(i) = replace(biwaz(i), " ", "")
-		biwaz(i + 1) = replace(biwaz(i + 1), chr(1), """")
-	Next
-	biwaz(ubound(biwaz)) = replace(biwaz(ubound(biwaz)), " ", "")
+    design = replace(replace(replace(replace(replace(replace(replace(replace(s, "\\", chr(0)), "\""", chr(1)), "\b", chr(8)), "\f", vbFormFeed), "\/", "/"), "\r", chr(2)), "\n", chr(3)), "\t", chr(4))
 
-	idx = 0
-	off = 1
-	if 0 < ubound(biwaz) then design = biwaz(idx)
+    i = instr(design, "\u")
+    if 0 < i then
+        do
+            j = i
+            design = replace(design, mid(design, j, 6), chrw("&H" & mid(design, j + 2, 4)))
+            i = instr(j + 1, design, "\u")
+        loop while 0 < i
+    end if
 
-	ParseCore value
+    if 0 < instr(design, "\") then err.raise 32000, "json parse", "ç„¡åŠ¹ãªã‚¨ã‚¹ã‚±ãƒ¼ãƒ— '\" & mid(design, instr(design, "\") + 1, 1) & "' ãŒä½¿ã‚ã‚Œã¦ã„ã¾ã™" ' invalid escape '\ & mid (design, instr (design, "\") + 1, 1) & ' is used
 
-	if off <= Len(biwaz(idx)) Or idx < UBound(biwaz) then Err.Raise 32000, "json parse", "json ‚ªŠ®Œ‹‚µ‚Ä‚¢‚Ü‚¹‚ñ ... " & Mid(biwaz, off, 6) ' json is not complete ... & Mid (biwaz, off, 6)
+    biwaz = split(replace(design, chr(0), "\"), """")
+    for i = 1 to ubound(biwaz) step 2
+        biwaz(i) = replace(replace(replace(replace(biwaz(i), chr(1), """"), chr(2), vbCr), chr(3), vbLf), chr(4), vbTab)
+        biwaz(i + 1) = replace(replace(replace(replace(biwaz(i + 1), " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+    next
+    if 0 < ubound(biwaz) then design = biwaz(0)
+    design = replace(replace(replace(replace(design, " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+end if
+
+    idx = 0
+    off = 1
+
+    ParseCore value
+
+    If 0 < UBound(biwaz) Then
+        If off <= Len(biwaz(idx)) Or idx < UBound(biwaz) Then Err.Raise 32000, "json parse", "json ãŒå®Œçµã—ã¦ã„ã¾ã›ã‚“ ... " ' json is not complete ...
+    Else
+        If off <= Len(design) Then Err.Raise 32000, "json parse", "json ãŒå®Œçµã—ã¦ã„ã¾ã›ã‚“ ... " ' json is not complete ...
+    End If
 	biwaz = null
 	design = null
 end sub
