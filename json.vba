@@ -46,16 +46,19 @@
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
 Option Explicit
 
-Private biwaz, designs, off, idx, whitespace
+Private biwaz, design, off, idx, whitespace
 
 Private Function StringifyTab(obj, ByVal off)
     Dim i, tp, sep, ary, key, data
     tp = VarType(obj)
     Select Case tp
     Case vbString
-        StringifyTab = """" & Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(obj, "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\"""), "/", "\/") & """"
+        If IsNull(whitespace) Then
+            StringifyTab = """" & obj & """"
+        Else
+            StringifyTab = """" & Replace(Replace(Replace(Replace(Replace(Replace(Replace(obj, "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\""") & """"
+        End If
     Case vbObject
-        sep = vbCrLf & String(off + 1, vbTab)
         Select Case TypeName(obj)
         Case "Dictionary"
             If 0 < obj.Count Then
@@ -63,7 +66,7 @@ Private Function StringifyTab(obj, ByVal off)
                 i = 0
                 If IsNull(whitespace) Then
                     For Each key In obj.Keys
-                        ary(i) = sep + StringifyTab(key, off + 1) & ":" & StringifyTab(obj(key), off + 1)
+                        ary(i) = StringifyTab(key, off + 1) & ":" & StringifyTab(obj(key), off + 1)
                         i = i + 1
                     Next
                     ary(UBound(ary)) = ary(UBound(ary)) & "}"
@@ -112,7 +115,7 @@ Private Function StringifyTab(obj, ByVal off)
         StringifyTab = """" & obj & """"
     Case Else
         If vbArray <= tp And tp <= vbArray + vbByte Then
-            If 0 < UBound(obj) Then
+            If -1 < UBound(obj) Then
                 ReDim ary(UBound(obj))
                 i = 0
                 If IsNull(whitespace) Then
@@ -143,7 +146,7 @@ End Function
 Public Function Stringify(obj, Optional ws)
     If IsMissing(ws) Then whitespace = Null Else whitespace = ws
     If IsNull(whitespace) Then
-        Stringify = Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(StringifyTab(obj, 0), "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\"""), "/", "\/")
+        Stringify = Replace(Replace(Replace(Replace(Replace(Replace(Replace(StringifyTab(obj, 0), "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\""")
     Else
         Stringify = StringifyTab(obj, 0)
     End If
@@ -153,92 +156,93 @@ Public Function Stringify(obj, Optional ws)
     Next
 End Function
 
-Private Sub ParseCore(ByRef Value)
+Private Sub ParseCore(ByRef value)
     Dim ch, child
 
-    ch = Mid(biwaz, off, 1)
+    ch = Mid(design, off, 1)
     Select Case ch
+    Case ""
+         off = 1
+         idx = idx + 2
+         design = biwaz(idx)
+         value = biwaz(idx - 1)
     Case "{"
-        Set Value = CreateObject("Scripting.Dictionary")
+        Set value = CreateObject("Scripting.Dictionary")
         off = off + 1
-        ch = Mid(biwaz, off, 1)
+        ch = Mid(design, off, 1)
         If ch = "}" Then
             off = off + 1
             Exit Sub
         End If
 
         Do
-            If ch <> """" Then Err.Raise 32000, "json parse", "オブジェクトのキーが検出できません" ' Unable to find key ob object
+            If ch <> "" Then Err.Raise 32000, "json parse", "オブジェクトのキーが検出できません" ' Unable to find key of object
+            off = 1
+            idx = idx + 2
+            design = biwaz(idx)
+            If Mid(design, off, 1) <> ":" Then Err.Raise 32000, "json parse", "オブジェクトのキー" & design & "の次に ':' を検出できません" ' Unable to find ':' next to object key & design
             off = off + 1
-            If Mid(biwaz, off, 1) <> ":" Then Err.Raise 32000, "json parse", "オブジェクトのキー" & designs(idx) & "の次に ':' を検出できません" ' Unable to find ':' next to object key & designs(idx)
-            ch = designs(idx)
-            idx = idx + 1
+            ch = biwaz(idx - 1)
 
-            off = off + 1
             ParseCore child
-            If VarType(child) = 9 Then Set Value(ch) = child Else Value(ch) = child
+            If VarType(child) = 9 Then Set value(ch) = child Else value(ch) = child
 
             child = ch
-            ch = Mid(biwaz, off, 1)
+            ch = Mid(design, off, 1)
             If ch = "}" Then
                 off = off + 1
                 Exit Sub
             ElseIf ch <> "," Then
                 Err.Raise 32000, "json parse", "オブジェクトのメンバー """ & child & """:.. の次に ',' を検出できません" ' Unable to find ',' next to object member & child & : ..
             End If
-
+            
             off = off + 1
-            ch = Mid(biwaz, off, 1)
+            ch = Mid(design, off, 1)
         Loop
     Case "["
-        Set Value = New Collection
+        Set value = New Collection
         off = off + 1
-        ch = Mid(biwaz, off, 1)
+        ch = Mid(design, off, 1)
         If ch = "]" Then
             off = off + 1
             Exit Sub
         End If
 
-        ParseCore child
-        Value.Add child
-        
         Do
-            ch = Mid(biwaz, off, 1)
+            ParseCore child
+            value.Add child
+                
+            ch = Mid(design, off, 1)
             If ch = "]" Then
                 off = off + 1
                 Exit Sub
             ElseIf ch <> "," Then
                 Err.Raise 32000, "json parse", "配列要素の次に ',' を検出できません" ' Unable to find ',' next to array element
             End If
-            off = off + 1
             
-            ParseCore child
-            Value.Add child
+            off = off + 1
+            ch = Mid(design, off, 1)
         Loop
-    Case """"
-        off = off + 1
-        Value = designs(idx)
-        idx = idx + 1
     Case "t"
-        If Mid(biwaz, off, 4) <> "true" Then Err.Raise 32000, "json parse", "'t' の次に 'rue' が検出できません" ' 'rue' cannot be detected after 't'
+        If Mid(design, off, 4) <> "true" Then Err.Raise 32000, "json parse", "'t' の次に 'rue' が検出できません" ' 'rue' cannot be detected after 't'
         off = off + 4
-        Value = True
+        value = True
     Case "f"
-        If Mid(biwaz, off, 5) <> "false" Then Err.Raise 32000, "json parse", "'f' の次に 'alse' が検出できません" ' 'alse' cannot be detected after 'f'
+        If Mid(design, off, 5) <> "false" Then Err.Raise 32000, "json parse", "'f' の次に 'alse' が検出できません" ' 'alse' cannot be detected after 'f'
         off = off + 5
-        Value = False
+        value = False
     Case "n"
-        If Mid(biwaz, off, 4) <> "null" Then Err.Raise 32000, "json parse", "'n' の次に 'ull' が検出できません" ' 'ull' cannot be detected after 'n'
+        If Mid(design, off, 4) <> "null" Then Err.Raise 32000, "json parse", "'n' の次に 'ull' が検出できません" ' 'ull' cannot be detected after 'n'
         off = off + 4
-        Value = Null
+        value = Null
     Case Else
         Dim length, org, ac
-        length = Len(biwaz)
+        length = Len(design)
         org = off
         If ch = "-" Then
             off = off + 1
             If length < off Then Err.Raise 32000, "json parse", "数値が記号 - の後、途切れています" ' The number is broken after the symbol-
-            ch = Mid(biwaz, off, 1)
+            ch = Mid(design, off, 1)
         End If
 
         ' integer
@@ -246,30 +250,30 @@ Private Sub ParseCore(ByRef Value)
         ac = Asc(ch)
         If 48 < ac And ac < 58 Then
             Do Until length < off
-                ch = Mid(biwaz, off, 1)
+                ch = Mid(design, off, 1)
                 ac = Asc(ch)
                 If ac < 48 Or 58 <= ac Then Exit Do
                 off = off + 1
             Loop
         ElseIf ac <> 48 Then
-            Err.Raise 32000, "json parse", "不明なトークンです (" & Mid(biwaz, org, off - org) & ")" ' Unknown token ( & mid(biwaz, org, off-org) & )
+            Err.Raise 32000, "json parse", "不明なトークンです (" & Mid(design, org, off - org) & ")" ' Unknown token ( & mid(design, org, off-org) & )
         End If
 
         ' fraction
         If off <= length Then
-            ch = Mid(biwaz, off, 1)
+            ch = Mid(design, off, 1)
             If ch = "." Then
                 off = off + 1
-                If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
+                If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(design, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 
-                ch = Mid(biwaz, off, 1)
+                ch = Mid(design, off, 1)
                 ac = Asc(ch)
-                If ac < 48 Or 58 <= ac Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
+                If ac < 48 Or 58 <= ac Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(design, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 
                 Do
                     off = off + 1
                     If length < off Then Exit Do
-                    ch = Mid(biwaz, off, 1)
+                    ch = Mid(design, off, 1)
                     ac = Asc(ch)
                 Loop Until ac < 48 Or 58 <= ac
             End If
@@ -280,67 +284,40 @@ Private Sub ParseCore(ByRef Value)
             Select Case ch
             Case "E", "e"
                 off = off + 1
-                If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
+                If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(design, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 
-                ch = Mid(biwaz, off, 1)
+                ch = Mid(design, off, 1)
                 Select Case ch
                 Case "-", "+"
                     off = off + 1
-                    If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
-                    ch = Mid(biwaz, off, 1)
+                    If length < off Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(design, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
+                    ch = Mid(design, off, 1)
                 End Select
 
                 ac = Asc(ch)
-                If ac < 48 Or 58 <= ac Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(biwaz, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
+                If ac < 48 Or 58 <= ac Then Err.Raise 32000, "json parse", "数値が途中で途切れています (" & Mid(design, org, off - org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
                 Do
                     off = off + 1
                     If length < off Then Exit Do
-                    ch = Mid(biwaz, off, 1)
+                    ch = Mid(design, off, 1)
                     ac = Asc(ch)
                     If ac < 48 Or 58 <= ac Then Exit Do
                 Loop
             End Select
         End If
 
-        Value = CDbl(Mid(biwaz, org, off - org))
+        value = CDbl(Mid(design, org, off - org))
     End Select
 End Sub
 
-Public Sub Parse(s, ByRef Value)
-    Dim ary, cs, i, j
-    ary = Split(s, """")
-    ReDim ary2(UBound(ary) / 2)
+Public Sub Parse(s, ByRef value)
+    Dim cs, i, j
 
-    ' 制御文字検出第１ステップ
     For i = 0 To 1
         If 0 < InStr(s, Chr(i)) Then Err.Raise 32000, "json parse", "禁則文字chr(" & i & ")が使われています" ' illegal chr ( & i & ) are used
     Next
-
-    ' 文字列配列の抽出
-    i = 0
-    j = 1
-    Do While j <= UBound(ary)
-        ary2(i) = ary(j)
-        ary(j) = """"
-        Do While Right(ary2(i), 1) = "\"
-            j = j + 1
-            ary2(i) = ary2(i) + """" + ary(j)
-            ary(j) = ""
-        Loop
-        i = i + 1
-        j = j + 2
-    Loop
-
-    cs = Replace(Join(ary2, Chr(0)), "\\", Chr(1))
-
-    ' 制御文字検出第２ステップ
-    For i = 2 To 31
-        If 0 < InStr(cs, Chr(i)) Then Err.Raise 32000, "json parse", "禁則文字 chr(" & i & ") が使われています" ' illegal chr ( & i & ) are used
-    Next
-
-    ' エスケープ文字の復元
-    cs = Replace(Replace(Replace(Replace(Replace(Replace(Replace(cs, "\b", Chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\""", """"), "\/", "/")
-    ReDim ary2(0)
+    
+    cs = Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", Chr(0)), "\""", Chr(1)), "\b", Chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
 
     i = InStr(cs, "\u")
     If 0 < i Then
@@ -351,18 +328,22 @@ Public Sub Parse(s, ByRef Value)
         Loop While 0 < i
     End If
 
-    ' 無効なエスケープ文字の検出
     If 0 < InStr(cs, "\") Then Err.Raise 32000, "json parse", "無効なエスケープ '\" & Mid(cs, InStr(cs, "\") + 1, 1) & "' が使われています" ' Invalid escape '\ & Mid (cs, InStr (cs, "\") + 1, 1) & ' is used
 
+    biwaz = Split(Replace(cs, Chr(0), "\"), """")
+    For i = 0 To UBound(biwaz) - 1 Step 2
+        biwaz(i) = Replace(biwaz(i), " ", "")
+        biwaz(i + 1) = Replace(biwaz(i + 1), Chr(1), """")
+    Next
+    biwaz(UBound(biwaz)) = Replace(biwaz(UBound(biwaz)), " ", "")
+    
     idx = 0
-    designs = Split(Replace(cs, Chr(1), "\"), Chr(0))
     off = 1
-    biwaz = Replace(Replace(Replace(Replace(Join(ary, ""), vbTab, ""), vbLf, ""), vbCr, ""), " ", "")
-    ary = Null
+    design = biwaz(idx)
 
-    ParseCore Value
-    designs = Null
+    ParseCore value
 
-    If off <= Len(biwaz) Then Err.Raise 32000, "json parse", "json が完結していません ... " & Mid(biwaz, off, 6) ' json is not complete ... & Mid (biwaz, off, 6)
+    If off <= Len(biwaz(idx)) Or idx < UBound(biwaz) Then Err.Raise 32000, "json parse", "json が完結していません ... " & Mid(biwaz, off, 6) ' json is not complete ... & Mid (biwaz, off, 6)
     biwaz = Null
+    design = Null
 End Sub

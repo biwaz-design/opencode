@@ -2,14 +2,14 @@
 ' VBS json parse v1.0.0
 ' (c) BIWAZ DESIGN - Takeshi Matsui - https://github.com/biwaz-design/opencode/blob/main/json.vbs
 '
-' It's a completely original JSON parser, but I think the structure will not 
-' change much no matter who makes it. I wanted to improve the speed of the 
-' off-the-shelf parser as much as possible, so I devised it. I hope it will be 
+' It's a completely original JSON parser, but I think the structure will not
+' change much no matter who makes it. I wanted to improve the speed of the
+' off-the-shelf parser as much as possible, so I devised it. I hope it will be
 ' useful for your work.
 ' -----------------------------------------------------------------------
 ' 完全にオリジナルのJSONパーサーですが、誰が作っても構造はあまり変わらないと思います。
 ' 既製のパーサーの速度をできるだけ向上させたいと思ったので、そこのところ頑張りました。
-' お役に立てば幸いです。
+' お役に立てば幸いです。※ご利用の際は、S-JISで保存し直して下さい。
 '
 ' * Parse json-string to object
 ' * Stringify object to json-string
@@ -22,9 +22,9 @@
 ' @license MIT (http://www.openbiwaz.org/licenses/mit-license.php)
 '' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
 '
-' Redistribution and use in biwaz and binary forms, with or without
+' Redistribution and use in source and binary forms, with or without
 ' modification, are permitted provided that the following conditions are met:
-'     * Redistributions of biwaz code must retain the above copyright
+'     * Redistributions of source code must retain the above copyright
 '       notice, this list of conditions and the following disclaimer.
 '     * Redistributions in binary form must reproduce the above copyright
 '       notice, this list of conditions and the following disclaimer in the
@@ -46,7 +46,7 @@
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
 option explicit
 
-private biwaz, designs, off, idx, whitespace
+Private biwaz, design, off, idx, whitespace
 
 private function StringifyTab(obj, byval off)
 	dim i, tp, sep, ary, key, data
@@ -56,7 +56,7 @@ private function StringifyTab(obj, byval off)
 		if isnull(whitespace) then
 			StringifyTab = """" & obj & """"
 		else
-			StringifyTab = """" & replace(replace(replace(replace(replace(replace(replace(replace(obj, "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\"""), "/", "\/") & """"
+			StringifyTab = """" & replace(replace(replace(replace(replace(replace(replace(obj, "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\""") & """"
 		end if
 	case 9
 		if 0 < obj.count then
@@ -64,7 +64,7 @@ private function StringifyTab(obj, byval off)
 			i = 0
 			if isnull(whitespace) then
 				for each key in obj.keys
-					ary(i) = sep + StringifyTab(key, off + 1) & ":" & StringifyTab(obj(key), off + 1)
+					ary(i) = StringifyTab(key, off + 1) & ":" & StringifyTab(obj(key), off + 1)
 					i = i + 1
 				next
 				ary(ubound(ary)) = ary(ubound(ary)) & "}"
@@ -120,7 +120,7 @@ end function
 public function Stringify(obj, ws)
 	whitespace = ws
 	if isnull(whitespace) then
-		Stringify = replace(replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\"""), "/", "\/")
+		Stringify = replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\""")
 	else
 		Stringify = StringifyTab(obj, 0)
 	end if
@@ -133,30 +133,36 @@ end function
 private sub ParseCore(byref value)
 	dim ch, child
 
-	ch = mid(biwaz, off, 1)
+	ch = mid(design, off, 1)
 	select case ch
+	case ""
+		 off = 1
+		 idx = idx + 2
+		 design = biwaz(idx)
+		 value = biwaz(idx - 1)
 	case "{"
 		set value = createobject("Scripting.Dictionary")
 		off = off + 1
-		ch = mid(biwaz, off, 1)
+		ch = mid(design, off, 1)
 		if ch = "}" then
 			off = off + 1
 			exit sub
 		end if
 
 		do
-			if ch <> """" then err.raise 32000, "json parse", "オブジェクトのキーが検出できません" ' Unable to find key ob object
+			if ch <> "" then err.raise 32000, "json parse", "オブジェクトのキーが検出できません" ' Unable to find key of object
+			off = 1
+			idx = idx + 2
+			design = biwaz(idx)
+			if mid(design, off, 1) <> ":" then err.raise 32000, "json parse", "オブジェクトのキー" & design & "の次に ':' を検出できません" ' Unable to find ':' next to object key & design
 			off = off + 1
-			if mid(biwaz, off, 1) <> ":" then err.raise 32000, "json parse", "オブジェクトのキー" & designs(idx) & "の次に ':' を検出できません" ' Unable to find ':' next to object key & designs(idx)
-			ch = designs(idx)
-			idx = idx + 1
+			ch = biwaz(idx - 1)
 
-			off = off + 1
 			ParseCore child
 			if vartype(child) = 9 then set value(ch) = child else value(ch) = child
 
 			child = ch
-			ch = mid(biwaz, off, 1)
+			ch = mid(design, off, 1)
 			if ch = "}" then 
 				off = off + 1
 				exit sub
@@ -165,12 +171,12 @@ private sub ParseCore(byref value)
 			end if
 
 			off = off + 1
-			ch = mid(biwaz, off, 1)
+			ch = mid(design, off, 1)
 		loop
 	case "["
 		redim value(-1)
 		off = off + 1
-		ch = mid(biwaz, off, 1)
+		ch = mid(design, off, 1)
 		if ch = "]" then
 			off = off + 1
 			exit sub
@@ -181,39 +187,37 @@ private sub ParseCore(byref value)
 			redim preserve value(ubound(value) + 1)
 			if vartype(child) = 9 then set value(ubound(value)) = child else value(ubound(value)) = child
 
-			ch = mid(biwaz, off, 1)
+			ch = mid(design, off, 1)
 			if ch = "]" then 
 				off = off + 1
 				exit sub
 			elseif ch <> "," then
 				err.raise 32000, "json parse", "配列要素の次に ',' を検出できません" ' Unable to find ',' next to array element
 			end if
+
 			off = off + 1
+			ch = mid(design, off, 1)
 		loop
-	case """"
-		off = off + 1
-		value = designs(idx)
-		idx = idx + 1
 	case "t"
-		if mid(biwaz, off, 4) <> "true" then err.raise 32000, "json parse", "'t' の次に 'rue' が検出できません" ' 'rue' cannot be detected after 't'
+		if mid(design, off, 4) <> "true" then err.raise 32000, "json parse", "'t' の次に 'rue' が検出できません" ' 'rue' cannot be detected after 't'
 		off = off + 4
 		value = true
 	case "f"
-		if mid(biwaz, off, 5) <> "false" then err.raise 32000, "json parse", "'f' の次に 'alse' が検出できません" ' 'alse' cannot be detected after 'f'
+		if mid(design, off, 5) <> "false" then err.raise 32000, "json parse", "'f' の次に 'alse' が検出できません" ' 'alse' cannot be detected after 'f'
 		off = off + 5
 		value = false
 	case "n"
-		if mid(biwaz, off, 4) <> "null" then err.raise 32000, "json parse", "'n' の次に 'ull' が検出できません" ' 'ull' cannot be detected after 'n'
+		if mid(design, off, 4) <> "null" then err.raise 32000, "json parse", "'n' の次に 'ull' が検出できません" ' 'ull' cannot be detected after 'n'
 		off = off + 4
 		value = null
 	case else
 		dim length, org, ac
-		length = len(biwaz)
+		length = len(design)
 		org = off
 		if ch = "-" then
 			off = off + 1
 			if length < off then err.raise 32000, "json parse", "数値が記号 - の後、途切れています" ' The number is broken after the symbol-
-			ch = mid(biwaz, off, 1)
+			ch = mid(design, off, 1)
 		end if
 
 		' integer
@@ -221,30 +225,30 @@ private sub ParseCore(byref value)
 		ac = Asc(ch)
 		if 48 < ac and ac < 58 then
 			do until length < off
-				ch = mid(biwaz, off, 1)
+				ch = mid(design, off, 1)
 				ac = asc(ch)
 				if ac < 48 or 58 <= ac then exit do
 				off = off + 1
 			loop
 		elseif ac <> 48 then
-			err.raise 32000, "json parse", "不明なトークンです (" & mid(biwaz, org, off-org) & ")" ' Unknown token ( & mid(biwaz, org, off-org) & )
+			err.raise 32000, "json parse", "不明なトークンです (" & mid(design, org, off-org) & ")" ' Unknown token ( & mid(design, org, off-org) & )
 		end if
 
 		' fraction
 		if off <= length then
-			ch = mid(biwaz, off, 1)
+			ch = mid(design, off, 1)
 			if ch = "." then
 				off = off + 1
-				if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
+				if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 
-				ch = mid(biwaz, off, 1)
+				ch = mid(design, off, 1)
 				ac = asc(ch)
-				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
+				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 
 				do
 					off = off + 1
 					if length < off then exit do
-					ch = mid(biwaz, off, 1)
+					ch = mid(design, off, 1)
 					ac = asc(ch)
 				loop until ac < 48 or 58 <= ac
 			end if
@@ -255,67 +259,40 @@ private sub ParseCore(byref value)
 			select case ch
 			case "E", "e"
 				off = off + 1
-				if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
+				if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 
-				ch = mid(biwaz, off, 1)
+				ch = mid(design, off, 1)
 				select case ch
 				case "-", "+"
 					off = off + 1
-					if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
-					ch = mid(biwaz, off, 1)
+					if length < off then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
+					ch = mid(design, off, 1)
 				end select
 
 				ac = asc(ch)
-				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(biwaz, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(biwaz, org, off-org) & )
+				if ac < 48 or 58 <= ac then err.raise 32000, "json parse", "数値が途中で途切れています (" & mid(design, org, off-org) & ")" ' The numbers are interrupted in the middle ( & mid(design, org, off-org) & )
 				do
 					off = off + 1
 					if length < off then exit do
-					ch = mid(biwaz, off, 1)
+					ch = mid(design, off, 1)
 					ac = asc(ch)
 					if ac < 48 or 58 <= ac then exit do
 				loop
 			end select
 		end if
 
-		value = cdbl(mid(biwaz, org, off-org))
+		value = cdbl(mid(design, org, off-org))
 	end select
 end sub
 
 public sub Parse(s, byref value)
-	dim ary, cs, i, j
-	ary = split(s, """")
-	redim ary2(ubound(ary) / 2)
+	Dim cs, i, j
 
-	' 制御文字検出第１ステップ
 	for i = 0 to 1
 		if 0 < instr(s, chr(i)) then err.raise 32000, "json parse", "禁則文字chr(" & i & ")が使われています" ' illegal chr ( & i & ) are used
 	next
 
-	' 文字列配列の抽出
-	i = 0
-	j = 1
-	do while j <= ubound(ary)
-		ary2(i) = ary(j)
-		ary(j) = """"
-		do while right(ary2(i), 1) = "\"
-			j = j + 1
-			ary2(i) = ary2(i) + """" + ary(j)
-			ary(j) = ""
-		loop
-		i = i + 1
-		j = j + 2
-	loop
-
-	cs = replace(join(ary2, chr(0)), "\\", chr(1))
-
-	' 制御文字検出第２ステップ
-	for i = 2 to 31
-		if 0 < instr(cs, chr(i)) then err.raise 32000, "json parse", "禁則文字 chr(" & i & ") が使われています" ' illegal chr ( & i & ) are used
-	next
-
-	' エスケープ文字の復元
-	cs = replace(replace(replace(replace(replace(replace(replace(cs, "\b", chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\""", """"), "\/", "/")
-	redim ary2(-1)
+	cs = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", Chr(0)), "\""", Chr(1)), "\b", Chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
 
 	i = instr(cs, "\u")
 	if 0 < i then
@@ -326,20 +303,24 @@ public sub Parse(s, byref value)
 		loop while 0 < i
 	end if
 
-	' 無効なエスケープ文字の検出
 	if 0 < instr(cs, "\") then err.raise 32000, "json parse", "無効なエスケープ '\" & mid(cs, instr(cs, "\")+1, 1) & "' が使われています" ' Invalid escape '\ & Mid (cs, InStr (cs, "\") + 1, 1) & ' is used
 
+	biwaz = split(replace(cs, chr(0), "\"), """")
+	for i = 0 to ubound(biwaz) - 1 step 2
+		biwaz(i) = replace(biwaz(i), " ", "")
+		biwaz(i + 1) = replace(biwaz(i + 1), chr(1), """")
+	Next
+	biwaz(ubound(biwaz)) = replace(biwaz(ubound(biwaz)), " ", "")
+
 	idx = 0
-	designs = split(replace(cs, chr(1), "\"), chr(0))
 	off = 1
-	biwaz = replace(replace(replace(replace(join(ary, ""), vbTab, ""), vbLf, ""), vbCr, ""), " ", "")
-	ary = null
+	design = biwaz(idx)
 
 	ParseCore value
-	designs = null
 
-	if off <= len(biwaz) then err.raise 32000, "json parse", "json が完結していません ... " & mid(biwaz, off, 6) ' json is not complete ... & Mid (biwaz, off, 6)
+	if off <= Len(biwaz(idx)) Or idx < UBound(biwaz) then Err.Raise 32000, "json parse", "json が完結していません ... " & Mid(biwaz, off, 6) ' json is not complete ... & Mid (biwaz, off, 6)
 	biwaz = null
+	design = null
 end sub
 
 sub SelfSub
