@@ -46,7 +46,7 @@
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
 option explicit
 
-private const isFast = false
+public isFast
 
 private biwaz, design, off, idx, whitespace
 
@@ -290,100 +290,120 @@ end sub
 public sub Parse(s, byref value)
 	Dim i, j
 
-if isFast then
-    design = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", chr(0)), "\""", chr(1)), "\b", chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
+if isFast Or isempty(isFast) then
+	design = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", chr(0)), "\""", chr(1)), "\b", chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
 
-    i = instr(design, "\u")
-    if 0 < i then
-        do
-            j = i
-            design = replace(design, mid(design, j, 6), chrw("&H" & mid(design, j + 2, 4)))
-            i = instr(j + 1, design, "\u")
-        loop while 0 < i
-    end if
+	i = instr(design, "\u")
+	if 0 < i then
+		do
+			j = i
+			design = replace(design, mid(design, j, 6), chrw("&H" & mid(design, j + 2, 4)))
+			i = instr(j + 1, design, "\u")
+		loop while 0 < i
+	end if
 
-    if 0 < instr(design, "\") then err.raise 32000, "json parse", "無効なエスケープ '\" & mid(design, instr(design, "\") + 1, 1) & "' が使われています" ' invalid escape '\ & mid (design, instr (design, "\") + 1, 1) & ' is used
+	design = replace(design, "\", "")
 
-    biwaz = split(replace(design, chr(0), "\"), """")
-    for i = 1 to ubound(biwaz) step 2
-        biwaz(i) = replace(biwaz(i), chr(1), """")
-        biwaz(i + 1) = replace(biwaz(i + 1), " ", "")
-    next
-    if 0 < ubound(biwaz) then design = biwaz(0)
-    design = replace(design, " ", "")
+	biwaz = split(replace(design, chr(0), "\"), """")
+	for i = 1 to ubound(biwaz) step 2
+		biwaz(i) = replace(biwaz(i), chr(1), """")
+		biwaz(i + 1) = replace(biwaz(i + 1), " ", "")
+	next
+	if 0 < ubound(biwaz) then design = biwaz(0)
+	design = replace(design, " ", "")
 else
-    for each i in array(0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
-        if 0 < instr(s, chr(i)) then err.raise 32000, "json parse", "禁則文字chr(" & i & ")が使われています" ' illegal chr ( & i & ) are used
-    next
+	for each i in array(0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
+		if 0 < instr(s, chr(i)) then err.raise 32000, "json parse", "禁則文字chr(" & i & ")が使われています" ' illegal chr ( & i & ) are used
+	next
 
-    design = replace(replace(replace(replace(replace(replace(replace(replace(s, "\\", chr(0)), "\""", chr(1)), "\b", chr(8)), "\f", vbFormFeed), "\/", "/"), "\r", chr(2)), "\n", chr(3)), "\t", chr(4))
+	design = replace(replace(replace(replace(replace(replace(replace(replace(s, "\\", chr(0)), "\""", chr(1)), "\b", chr(8)), "\f", vbFormFeed), "\/", "/"), "\r", chr(2)), "\n", chr(3)), "\t", chr(4))
 
-    i = instr(design, "\u")
-    if 0 < i then
-        do
-            j = i
-            design = replace(design, mid(design, j, 6), chrw("&H" & mid(design, j + 2, 4)))
-            i = instr(j + 1, design, "\u")
-        loop while 0 < i
-    end if
+	i = instr(design, "\u")
+	if 0 < i then
+		do
+			j = i
+			design = replace(design, mid(design, j, 6), chrw("&H" & mid(design, j + 2, 4)))
+			i = instr(j + 1, design, "\u")
+		loop while 0 < i
+	end if
 
-    if 0 < instr(design, "\") then err.raise 32000, "json parse", "無効なエスケープ '\" & mid(design, instr(design, "\") + 1, 1) & "' が使われています" ' invalid escape '\ & mid (design, instr (design, "\") + 1, 1) & ' is used
+	if 0 < instr(design, "\") then err.raise 32000, "json parse", "無効なエスケープ '\" & mid(design, instr(design, "\") + 1, 1) & "' が使われています" ' invalid escape '\ & mid (design, instr (design, "\") + 1, 1) & ' is used
 
-    biwaz = split(replace(design, chr(0), "\"), """")
-    for i = 1 to ubound(biwaz) step 2
-        biwaz(i) = replace(replace(replace(replace(biwaz(i), chr(1), """"), chr(2), vbCr), chr(3), vbLf), chr(4), vbTab)
-        biwaz(i + 1) = replace(replace(replace(replace(biwaz(i + 1), " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
-    next
-    if 0 < ubound(biwaz) then design = biwaz(0)
-    design = replace(replace(replace(replace(design, " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+	biwaz = split(replace(design, chr(0), "\"), """")
+	if 0 < ubound(biwaz) then
+		for i = 0 to ubound(biwaz) step 2
+			biwaz(i) = replace(replace(replace(replace(biwaz(i), " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+		next
+		design = join(biwaz, "")
+		if 0 < instr(design, vbTab) then err.raise 32000, "json parse", "文字列中にタブ文字が含まれます" ' detect tab in string
+		if 0 < instr(design, vbCr) then err.raise 32000, "json parse", "文字列中にキャリッジリターン文字が含まれます" ' detect cr in string
+		if 0 < instr(design, vbLf) then err.raise 32000, "json parse", "文字列中にラインフィード文字が含まれます" ' detect lf in string
+		for i = 1 to ubound(biwaz) step 2
+			biwaz(i) = replace(replace(replace(replace(biwaz(i), chr(1), """"), chr(2), vbCr), chr(3), vbLf), chr(4), vbTab)
+		next
+		design = biwaz(0)
+	else
+		design = replace(replace(replace(replace(design, " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+	end if
 end if
 
-    idx = 0
-    off = 1
+	idx = 0
+	off = 1
 
-    ParseCore value
+	ParseCore value
 
-    If 0 < UBound(biwaz) Then
-        If off <= Len(biwaz(idx)) Or idx < UBound(biwaz) Then Err.Raise 32000, "json parse", "json が完結していません ... " ' json is not complete ...
-    Else
-        If off <= Len(design) Then Err.Raise 32000, "json parse", "json が完結していません ... " ' json is not complete ...
-    End If
+	If 0 < UBound(biwaz) Then
+		If off <= Len(biwaz(idx)) Or idx < UBound(biwaz) Then Err.Raise 32000, "json parse", "json が完結していません ... " ' json is not complete ...
+	Else
+		If off <= Len(design) Then Err.Raise 32000, "json parse", "json が完結していません ... " ' json is not complete ...
+	End If
 	biwaz = null
 	design = null
 end sub
 
 sub SelfSub
-	dim i, s, n, start, value, raptime
+	dim i, j, s, n, isView, start, value, raptime
 
-	if 0 < WScript.Arguments.Count then
-		with createobject("Scripting.FileSystemObject").opentextfile(WScript.Arguments(0))
-			s = .readall
-			.close
-		end with
+	if WScript.Arguments.Count = 0 then
+		wscript.echo "usage : cscript //nologo json.vbs /r /s /100 [target.txt]"
+		wscript.echo "		/r   ... Printout Raw Style (default is Shaped Style)"
+		wscript.echo "		/s   ... Strict Mode(default is Speed Mode)"
+		wscript.echo "		/100 ... Parse times"
+	end if
 
-		if 1 < WScript.Arguments.Count then n = WScript.Arguments(1) else n = 0
-		start = now
-		select case n
-		case 0
-			Parse s, value
-			raptime = datediff("s", start, now)
+	n = 1
+	isFast = true
+	isView = true
+	for i=0 to WScript.Arguments.Count - 1
+		if left(WScript.Arguments(i), 1) = "/" then
+			select case mid(WScript.Arguments(i), 2, 1)
+			case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+				n = cint(mid(WScript.Arguments(i), 2))
+			case "s"
+				isFast = not isFast
+			case "r"
+				isView = not isView
+			end select
+		else
+			with createobject("Scripting.FileSystemObject").opentextfile(WScript.Arguments(i))
+				s = .readall
+				.close
+			end with
 
 			start = now
-			wscript.echo Stringify(value, vbTab)
-		case else
-			for i = 1 to n
+			for j = 1 to n
 				Parse s, value
 			next
 			raptime = datediff("s", start, now)
 
 			start = now
-			if n = 1 then wscript.echo Stringify(value, null)
-		end select
-
-		WScript.StdErr.WriteLine raptime & " " & datediff("s", start, now)
-	else
-		wscript.echo "usage : cscript //nologo json.vbs [target.txt] [parse times]"
-	end if
+			if n = 1 then
+				if isView then s = Stringify(value, vbTab) else s = Stringify(value, null)
+				wscript.echo s
+			end if
+			WScript.StdErr.WriteLine raptime & " " & datediff("s", start, now)
+		end if
+	next
 end sub
 
 if WScript.ScriptName = "json.vbs" then SelfSub

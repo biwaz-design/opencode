@@ -46,7 +46,7 @@
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
 Option Explicit
 
-Private Const isFast = False
+Public isFast
 
 Private biwaz, design, off, idx, whitespace
 
@@ -308,14 +308,14 @@ Private Sub ParseCore(ByRef value)
             End Select
         End If
 
-        value = CDbl(Mid(design, org, off - org))
+        value = Val(Mid(design, org, off - org))
     End Select
 End Sub
 
 Public Sub Parse(s, ByRef value)
     Dim i, j
 
-If isFast Then
+If isFast Or IsEmpty(isFast) Then
     design = Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(s, vbCr, ""), vbLf, ""), vbTab, ""), "\\", Chr(0)), "\""", Chr(1)), "\b", Chr(8)), "\t", vbTab), "\n", vbLf), "\f", vbFormFeed), "\r", vbCr), "\/", "/")
 
     i = InStr(design, "\u")
@@ -327,7 +327,7 @@ If isFast Then
         Loop While 0 < i
     End If
 
-    If 0 < InStr(design, "\") Then Err.Raise 32000, "json parse", "無効なエスケープ '\" & Mid(design, InStr(design, "\") + 1, 1) & "' が使われています" ' Invalid escape '\ & Mid (design, InStr (design, "\") + 1, 1) & ' is used
+    design = Replace(design, "\", "")
 
     biwaz = Split(Replace(design, Chr(0), "\"), """")
     For i = 1 To UBound(biwaz) Step 2
@@ -355,12 +355,21 @@ Else
     If 0 < InStr(design, "\") Then Err.Raise 32000, "json parse", "無効なエスケープ '\" & Mid(design, InStr(design, "\") + 1, 1) & "' が使われています" ' Invalid escape '\ & Mid (design, InStr (design, "\") + 1, 1) & ' is used
 
     biwaz = Split(Replace(design, Chr(0), "\"), """")
-    For i = 1 To UBound(biwaz) Step 2
-        biwaz(i) = Replace(Replace(Replace(Replace(biwaz(i), Chr(1), """"), Chr(2), vbCr), Chr(3), vbLf), Chr(4), vbTab)
-        biwaz(i + 1) = Replace(Replace(Replace(Replace(biwaz(i + 1), " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
-    Next
-    If 0 < UBound(biwaz) Then design = biwaz(0)
-    design = Replace(Replace(Replace(Replace(design, " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+    If 0 < UBound(biwaz) Then
+        For i = 0 To UBound(biwaz) Step 2
+            biwaz(i) = Replace(Replace(Replace(Replace(biwaz(i), " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+        Next
+        design = Join(biwaz, "")
+        If 0 < InStr(design, vbTab) Then Err.Raise 32000, "json parse", "文字列中にタブ文字が含まれます" ' detect tab in string
+        If 0 < InStr(design, vbCr) Then Err.Raise 32000, "json parse", "文字列中にキャリッジリターン文字が含まれます" ' detect cr in string
+        If 0 < InStr(design, vbLf) Then Err.Raise 32000, "json parse", "文字列中にラインフィード文字が含まれます" ' detect lf in string
+        For i = 1 To UBound(biwaz) Step 2
+            biwaz(i) = Replace(Replace(Replace(Replace(biwaz(i), Chr(1), """"), Chr(2), vbCr), Chr(3), vbLf), Chr(4), vbTab)
+        Next
+        design = biwaz(0)
+    Else
+        design = Replace(Replace(Replace(Replace(design, " ", ""), vbCr, ""), vbLf, ""), vbTab, "")
+    End If
 End If
 
     idx = 0
