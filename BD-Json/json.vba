@@ -1,6 +1,6 @@
 ''
 ' VBA json parse v1.0.0
-' (c) BIWAZ DESIGN - Takeshi Matsui - https://github.com/biwaz-design/opencode/blob/main/json.vba
+' (c) BIWAZ DESIGN - Takeshi Matsui - https://github.com/biwaz-design/opencode/blob/main/BD-Json/json.vba
 '
 ' It's a completely original JSON parser, but I think the structure will not
 ' change much no matter who makes it. I wanted to improve the speed of the
