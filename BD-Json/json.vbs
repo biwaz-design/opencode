@@ -50,13 +50,21 @@ public isFast
 
 private biwaz, design, off, idx, whitespace
 
+private function repeat(lngNum, str)
+	dim i
+	repeat = ""
+	for i = 1 to lngNum
+		repeat = repeat + str
+	next
+end function
+
 private function StringifyTab(obj, byval off)
 	dim i, tp, sep, ary, key, data
 	tp = vartype(obj)
 	select case tp
 	case 8
 		if isnull(whitespace) then
-			StringifyTab = """" & obj & """"
+			StringifyTab = """" & replace(obj, """", chr(1)) & """"
 		else
 			StringifyTab = """" & replace(replace(replace(replace(replace(replace(replace(obj, "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\""") & """"
 		end if
@@ -71,12 +79,12 @@ private function StringifyTab(obj, byval off)
 				next
 				ary(ubound(ary)) = ary(ubound(ary)) & "}"
 			else
-				sep = vbCrLf & string(off + 1, whitespace)
+				sep = vbCrLf & repeat(off + 1, whitespace)
 				for each key in obj.keys
 					ary(i) = sep + StringifyTab(key, off + 1) & ": " & StringifyTab(obj(key), off + 1)
 					i = i + 1
 				next
-				ary(ubound(ary)) = ary(ubound(ary)) & left(sep, len(sep) - 1) & "}"
+				ary(ubound(ary)) = ary(ubound(ary)) & left(sep, len(sep) - len(whitespace)) & "}"
 			end if
 			ary(0) = "{" & ary(0)
 			StringifyTab = join(ary, ",")
@@ -101,12 +109,12 @@ private function StringifyTab(obj, byval off)
 					next
 					ary(ubound(ary)) = ary(ubound(ary)) & "]"
 				else
-					sep = vbCrLf & string(off + 1, whitespace)
+					sep = vbCrLf & repeat(off + 1, whitespace)
 					for each data in obj
 						ary(i) = sep & StringifyTab(data, off + 1)
 						i = i + 1
 					next
-					ary(ubound(ary)) = ary(ubound(ary)) & left(sep, len(sep) - 1) & "]"
+					ary(ubound(ary)) = ary(ubound(ary)) & left(sep, len(sep) - len(whitespace)) & "]"
 				end if
 				ary(0) = "[" & ary(0)
 				StringifyTab = join(ary, ",")
@@ -122,7 +130,7 @@ end function
 public function Stringify(obj, ws)
 	whitespace = ws
 	if isnull(whitespace) then
-		Stringify = replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\""")
+		Stringify = replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), chr(1), "\""")
 	else
 		Stringify = StringifyTab(obj, 0)
 	end if
@@ -361,19 +369,76 @@ end if
 	design = null
 end sub
 
+sub CreateFolder(path)
+	parent = objFileSys.getparentfoldername(path)
+	if len(parent) = 0 then exit sub
+	if not objFileSys.folderexists(parent) then CreateFolder(parent)
+	objFileSys.createfolder(path)
+end sub
+
+dim objFileSys, isView, isUtf8, putTo, n
+set objFileSys = createobject("Scripting.FileSystemObject")
+
+sub SelfJson(filepath)
+	dim i, s, start, value, raptime
+
+	if isUtf8 then
+		with createobject("ADODB.Stream")
+			.charset = "utf-8"
+			.type = 1
+			.open
+			.loadfromfile filepath
+			.position = 0
+			.type = 2
+			s = .readtext
+			.close
+		end with
+	else
+		with objFileSys.opentextfile(filepath)
+			s = .readall
+			.close
+		end with
+	end if
+
+	start = now
+	for i = 1 to n
+		Parse s, value
+	next
+	raptime = datediff("s", start, now)
+
+	start = now
+	if n = 1 then
+		if isView then s = Stringify(value, vbTab) else s = Stringify(value, null)
+		if isnull(putTo) then
+			wscript.echo s
+		else
+			filepath = objFileSys.buildpath(putTo, objFileSys.getfilename(left(filepath, len(filepath) - len(objFileSys.GetExtensionName(filepath))) & ".txt"))
+			with objFileSys.opentextfile(filepath, 2, true)
+				.write s
+				.close
+			end with
+		end if
+	end if
+	WScript.StdErr.WriteLine filepath & " : " & raptime & " " & datediff("s", start, now)
+end sub
+
 sub SelfSub
-	dim i, j, s, n, isView, start, value, raptime
+	dim i, temp, objFile
 
 	if WScript.Arguments.Count = 0 then
 		wscript.echo "usage : cscript //nologo json.vbs /r /s /100 [target.txt]"
 		wscript.echo "		/r   ... Printout Raw Style (default is Shaped Style)"
 		wscript.echo "		/s   ... Strict Mode(default is Speed Mode)"
+		wscript.echo "		/u   ... Read As Utf-8(default is Shift-JIS)"
+		wscript.echo "		/o   ... Write Out *.txt(Shift-JIS)"
 		wscript.echo "		/100 ... Parse times"
 	end if
 
 	n = 1
 	isFast = true
 	isView = true
+	isUtf8 = false
+	putTo = null
 	for i=0 to WScript.Arguments.Count - 1
 		if left(WScript.Arguments(i), 1) = "/" then
 			select case mid(WScript.Arguments(i), 2, 1)
@@ -383,25 +448,27 @@ sub SelfSub
 				isFast = not isFast
 			case "r"
 				isView = not isView
+			case "u"
+				isUtf8 = not isUtf8
+			case "o"
+				putTo = mid(WScript.Arguments(i), 3)
+				if not objFileSys.folderexists(putTo) then CreateFolder(putTo)
 			end select
 		else
-			with createobject("Scripting.FileSystemObject").opentextfile(WScript.Arguments(i))
-				s = .readall
-				.close
-			end with
+			if 0 < instr(WScript.Arguments(i), "?") or instr(WScript.Arguments(i), "*") then
+				temp = objFileSys.buildpath(replace(wscript.ScriptFullName, wscript.ScriptName, ""), "_temp_")
+				if not objFileSys.folderexists(temp) then objFileSys.createfolder(temp)
 
-			start = now
-			for j = 1 to n
-				Parse s, value
-			next
-			raptime = datediff("s", start, now)
+				objFileSys.CopyFile WScript.Arguments(i), temp & "\", true
 
-			start = now
-			if n = 1 then
-				if isView then s = Stringify(value, vbTab) else s = Stringify(value, null)
-				wscript.echo s
+				for each objFile in objFileSys.GetFolder(temp).files
+					SelfJson(objFileSys.buildpath(temp, objFile.name))
+				next
+
+				objFileSys.deletefolder(temp)
+			else
+				SelfJson(WScript.Arguments(i))
 			end if
-			WScript.StdErr.WriteLine raptime & " " & datediff("s", start, now)
 		end if
 	next
 end sub

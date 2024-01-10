@@ -50,13 +50,21 @@ Public isFast
 
 Private biwaz, design, off, idx, whitespace
 
+Private Function repeat(lngNum, str)
+	Dim i
+	repeat = ""
+	For i = 1 to lngNum
+		repeat = repeat + str
+	Next
+End Function
+
 Private Function StringifyTab(obj, ByVal off)
     Dim i, tp, sep, ary, key, data
     tp = VarType(obj)
     Select Case tp
     Case vbString
         If IsNull(whitespace) Then
-            StringifyTab = """" & obj & """"
+            StringifyTab = """" & replace(obj, """", chr(1)) & """"
         Else
             StringifyTab = """" & Replace(Replace(Replace(Replace(Replace(Replace(Replace(obj, "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\""") & """"
         End If
@@ -73,12 +81,12 @@ Private Function StringifyTab(obj, ByVal off)
                     Next
                     ary(UBound(ary)) = ary(UBound(ary)) & "}"
                 Else
-                    sep = vbCrLf & String(off + 1, whitespace)
+                    sep = vbCrLf & repeat(off + 1, whitespace)
                     For Each key In obj.Keys
                         ary(i) = sep + StringifyTab(key, off + 1) & ": " & StringifyTab(obj(key), off + 1)
                         i = i + 1
                     Next
-                    ary(UBound(ary)) = ary(UBound(ary)) & Left(sep, Len(sep) - 1) & "}"
+                    ary(ubound(ary)) = ary(ubound(ary)) & left(sep, len(sep) - len(whitespace)) & "}"
                 End If
                 ary(0) = "{" & ary(0)
                 StringifyTab = Join(ary, ",")
@@ -96,7 +104,7 @@ Private Function StringifyTab(obj, ByVal off)
                     Next
                     ary(UBound(ary)) = ary(UBound(ary)) & "]"
                 Else
-                    sep = vbCrLf & String(off + 1, whitespace)
+                    sep = vbCrLf & Repeat(off + 1, whitespace)
                     For Each data In obj
                         ary(i) = sep & StringifyTab(data, off + 1)
                         i = i + 1
@@ -127,12 +135,12 @@ Private Function StringifyTab(obj, ByVal off)
                     Next
                     ary(UBound(ary)) = ary(UBound(ary)) & "]"
                 Else
-                    sep = vbCrLf & String(off + 1, whitespace)
+                    sep = vbCrLf & repeat(off + 1, whitespace)
                     For Each data In obj
                         ary(i) = sep & StringifyTab(data, off + 1)
                         i = i + 1
                     Next
-                    ary(UBound(ary)) = ary(UBound(ary)) & Left(sep, Len(sep) - 1) & "]"
+                    ary(ubound(ary)) = ary(ubound(ary)) & left(sep, len(sep) - len(whitespace)) & "]"
                 End If
                 ary(0) = "[" & ary(0)
                 StringifyTab = Join(ary, ",")
@@ -148,7 +156,7 @@ End Function
 Public Function Stringify(obj, Optional ws)
     If IsMissing(ws) Then whitespace = Null Else whitespace = ws
     If IsNull(whitespace) Then
-        Stringify = Replace(Replace(Replace(Replace(Replace(Replace(Replace(StringifyTab(obj, 0), "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\""")
+        Stringify = replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), chr(1), "\""")
     Else
         Stringify = StringifyTab(obj, 0)
     End If
