@@ -51,11 +51,11 @@ Public isFast
 Private biwaz, design, off, idx, whitespace
 
 Private Function repeat(lngNum, str)
-	Dim i
-	repeat = ""
-	For i = 1 to lngNum
-		repeat = repeat + str
-	Next
+    Dim i
+    repeat = ""
+    For i = 1 To lngNum
+        repeat = repeat + str
+    Next
 End Function
 
 Private Function StringifyTab(obj, ByVal off)
@@ -64,7 +64,7 @@ Private Function StringifyTab(obj, ByVal off)
     Select Case tp
     Case vbString
         If IsNull(whitespace) Then
-            StringifyTab = """" & replace(obj, """", chr(1)) & """"
+            StringifyTab = """" & Replace(obj, """", Chr(1)) & """"
         Else
             StringifyTab = """" & Replace(Replace(Replace(Replace(Replace(Replace(Replace(obj, "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), """", "\""") & """"
         End If
@@ -86,7 +86,7 @@ Private Function StringifyTab(obj, ByVal off)
                         ary(i) = sep + StringifyTab(key, off + 1) & ": " & StringifyTab(obj(key), off + 1)
                         i = i + 1
                     Next
-                    ary(ubound(ary)) = ary(ubound(ary)) & left(sep, len(sep) - len(whitespace)) & "}"
+                    ary(UBound(ary)) = ary(UBound(ary)) & Left(sep, Len(sep) - Len(whitespace)) & "}"
                 End If
                 ary(0) = "{" & ary(0)
                 StringifyTab = Join(ary, ",")
@@ -104,7 +104,7 @@ Private Function StringifyTab(obj, ByVal off)
                     Next
                     ary(UBound(ary)) = ary(UBound(ary)) & "]"
                 Else
-                    sep = vbCrLf & Repeat(off + 1, whitespace)
+                    sep = vbCrLf & repeat(off + 1, whitespace)
                     For Each data In obj
                         ary(i) = sep & StringifyTab(data, off + 1)
                         i = i + 1
@@ -114,7 +114,11 @@ Private Function StringifyTab(obj, ByVal off)
                 ary(0) = "[" & ary(0)
                 StringifyTab = Join(ary, ",")
             Else
-                StringifyTab = "[" & vbCrLf & repeat(off, whitespace) & "]" ' PowerShell 仕様に合わせます 2024/01/13
+                If IsNull(whitespace) Then
+                    StringifyTab = "[]"
+                Else
+                    StringifyTab = "[" & vbCrLf & repeat(off, whitespace) & "]" ' PowerShell 仕様に合わせます 2024/01/13
+                End If
             End If
         End Select
     Case vbNull
@@ -140,12 +144,16 @@ Private Function StringifyTab(obj, ByVal off)
                         ary(i) = sep & StringifyTab(data, off + 1)
                         i = i + 1
                     Next
-                    ary(ubound(ary)) = ary(ubound(ary)) & left(sep, len(sep) - len(whitespace)) & "]"
+                    ary(UBound(ary)) = ary(UBound(ary)) & Left(sep, Len(sep) - Len(whitespace)) & "]"
                 End If
                 ary(0) = "[" & ary(0)
                 StringifyTab = Join(ary, ",")
             Else
-                StringifyTab = "[" & vbCrLf & repeat(off, whitespace) & "]" ' PowerShell 仕様に合わせます 2024/01/13
+                If IsNull(whitespace) Then
+                    StringifyTab = "[]"
+                Else
+                    StringifyTab = "[" & vbCrLf & repeat(off, whitespace) & "]" ' PowerShell 仕様に合わせます 2024/01/13
+                End If
             End If
         Else
             StringifyTab = obj
@@ -156,7 +164,7 @@ End Function
 Public Function Stringify(obj, Optional ws)
     If IsMissing(ws) Then whitespace = Null Else whitespace = ws
     If IsNull(whitespace) Then
-        Stringify = replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), chr(1), "\""")
+        Stringify = Replace(Replace(Replace(Replace(Replace(Replace(Replace(StringifyTab(obj, 0), "\", "\\"), Chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), Chr(1), "\""")
     Else
         Stringify = StringifyTab(obj, 0) & vbCrLf ' PowerShell 仕様に合わせます 2024/01/13
     End If

@@ -119,7 +119,11 @@ private function StringifyTab(obj, byval off)
 				ary(0) = "[" & ary(0)
 				StringifyTab = join(ary, ",")
 			else
-				StringifyTab = "[" & vbCrLf & repeat(off, whitespace) & "]" ' PowerShell 仕様に合わせます 2024/01/13
+				if isnull(whitespace) then
+					StringifyTab = "[]"
+				else
+					StringifyTab = "[" & vbCrLf & repeat(off, whitespace) & "]" ' PowerShell 仕様に合わせます 2024/01/13
+				end if
 			end if
 		else
 			StringifyTab = obj
@@ -132,7 +136,7 @@ public function Stringify(obj, ws)
 	if isnull(whitespace) then
 		Stringify = replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), chr(1), "\""")
 	else
-		Stringify = StringifyTab(obj, 0) & vbCrLf ' PowerShell 仕様に合わせます 2024/01/13
+		Stringify = StringifyTab(obj, 0)
 	end if
 	dim i
 	for each i in array(0, 1, 2, 3, 4, 5, 6, 7, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
@@ -369,17 +373,18 @@ end if
 	design = null
 end sub
 
+dim objFileSys
+set objFileSys = createobject("Scripting.FileSystemObject")
+
 sub CreateFolder(path)
+	dim parent
 	parent = objFileSys.getparentfoldername(path)
 	if len(parent) = 0 then exit sub
 	if not objFileSys.folderexists(parent) then CreateFolder(parent)
 	objFileSys.createfolder(path)
 end sub
 
-dim objFileSys, isView, isUtf8, putTo, n
-set objFileSys = createobject("Scripting.FileSystemObject")
-
-sub SelfJson(filepath)
+private sub SelfJson(filepath, isView, isUtf8, putTo, n)
 	dim i, s, start, value, raptime
 
 	if isUtf8 then
@@ -423,7 +428,7 @@ sub SelfJson(filepath)
 end sub
 
 sub SelfSub
-	dim i, temp, objFile
+	dim i, temp, objFile, isView, isUtf8, putTo, n
 
 	if WScript.Arguments.Count = 0 then
 		wscript.echo "usage : cscript //nologo json.vbs /r /s /100 [target.txt]"
@@ -462,12 +467,12 @@ sub SelfSub
 				objFileSys.CopyFile WScript.Arguments(i), temp & "\", true
 
 				for each objFile in objFileSys.GetFolder(temp).files
-					SelfJson(objFileSys.buildpath(temp, objFile.name))
+					SelfJson objFileSys.buildpath(temp, objFile.name), isView, isUtf8, putTo, n
 				next
 
 				objFileSys.deletefolder(temp)
 			else
-				SelfJson(WScript.Arguments(i))
+				SelfJson WScript.Arguments(i), isView, isUtf8, putTo, n
 			end if
 		end if
 	next
