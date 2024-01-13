@@ -114,7 +114,7 @@ Private Function StringifyTab(obj, ByVal off)
                 ary(0) = "[" & ary(0)
                 StringifyTab = Join(ary, ",")
             Else
-                StringifyTab = "[]"
+                StringifyTab = "[" & vbCrLf & repeat(off, whitespace) & "]" ' PowerShell 仕様に合わせます 2024/01/13
             End If
         End Select
     Case vbNull
