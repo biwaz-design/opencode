@@ -119,7 +119,7 @@ private function StringifyTab(obj, byval off)
 				ary(0) = "[" & ary(0)
 				StringifyTab = join(ary, ",")
 			else
-				StringifyTab = "[]"
+				StringifyTab = "[" & vbCrLf & repeat(off, whitespace) & "]" ' PowerShell 仕様に合わせます 2024/01/13
 			end if
 		else
 			StringifyTab = obj
@@ -132,7 +132,7 @@ public function Stringify(obj, ws)
 	if isnull(whitespace) then
 		Stringify = replace(replace(replace(replace(replace(replace(replace(StringifyTab(obj, 0), "\", "\\"), chr(8), "\b"), vbTab, "\t"), vbLf, "\n"), vbFormFeed, "\f"), vbCr, "\r"), chr(1), "\""")
 	else
-		Stringify = StringifyTab(obj, 0)
+		Stringify = StringifyTab(obj, 0) & vbCrLf ' PowerShell 仕様に合わせます 2024/01/13
 	end if
 	dim i
 	for each i in array(0, 1, 2, 3, 4, 5, 6, 7, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
