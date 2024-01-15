@@ -1,6 +1,6 @@
 ''
 ' VBA json parse v1.0.0
-' (c) BIWAZ DESIGN - Takeshi Matsui - https://github.com/biwaz-design/opencode/blob/main/BD-Json/json.vba
+' (c) BIWAZ DESIGN - Takeshi Matsui - https://github.com/biwaz-design/opencode/blob/main/BD-Json/json.bas
 '
 ' It's a completely original JSON parser, but I think the structure will not
 ' change much no matter who makes it. I wanted to improve the speed of the
@@ -9,7 +9,7 @@
 ' -----------------------------------------------------------------------
 ' 完全にオリジナルのJSONパーサーですが、誰が作っても構造はあまり変わらないと思います。
 ' 既製のパーサーの速度をできるだけ向上させたいと思ったので、そこのところ頑張りました。
-' お役に立てば幸いです。
+' お役に立てば幸いです。※SHIFT-JISで保存しなおして、ご利用ください。
 '
 ' * Parse json-string to object
 ' * Stringify object to json-string
