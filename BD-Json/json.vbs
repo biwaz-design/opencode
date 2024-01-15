@@ -384,8 +384,8 @@ sub CreateFolder(path)
 	objFileSys.createfolder(path)
 end sub
 
-private sub SelfJson(filepath, isView, isUtf8, putTo, n)
-	dim i, s, start, value, raptime
+private sub SelfJson(filepath, isCompress, isUtf8, putTo, n)
+	dim i, s, start, value, outpath, raptime
 
 	if isUtf8 then
 		with createobject("ADODB.Stream")
@@ -413,26 +413,46 @@ private sub SelfJson(filepath, isView, isUtf8, putTo, n)
 
 	start = now
 	if n = 1 then
-		if isView then s = Stringify(value, vbTab) else s = Stringify(value, null)
+		if isCompress then s = Stringify(value, null) else s = Stringify(value, vbTab)
 		if isnull(putTo) then
 			wscript.echo s
 		else
-			filepath = objFileSys.buildpath(putTo, objFileSys.getfilename(left(filepath, len(filepath) - len(objFileSys.GetExtensionName(filepath))) & ".txt"))
-			with objFileSys.opentextfile(filepath, 2, true)
-				.write s
-				.close
-			end with
+			if isCompress then
+				outpath = objFileSys.buildpath(putTo, objFileSys.getfilename(filepath))
+			else
+				outpath = objFileSys.buildpath(putTo, objFileSys.getfilename(left(filepath, len(filepath) - len(objFileSys.GetExtensionName(filepath))) & ".txt"))
+			end if
+
+			if outpath = filepath then
+				msgbox "can't overwrite original file. " & filepath
+			else
+				if isCompress then
+					with createobject("ADODB.Stream")
+						.charset = "utf-8"
+						.open
+						.writetext s, 1
+						.SaveToFile outpath, 2
+						.flush
+						.close
+					end with
+				else
+					with objFileSys.opentextfile(outpath, 2, true)
+						.write s
+						.close
+					end with
+				end if
+			end if
 		end if
 	end if
 	WScript.StdErr.WriteLine filepath & " : " & raptime & " " & datediff("s", start, now)
 end sub
 
 sub SelfSub
-	dim i, temp, objFile, isView, isUtf8, putTo, n
+	dim i, temp, objFile, isCompress, isUtf8, putTo, n
 
 	if WScript.Arguments.Count = 0 then
 		wscript.echo "usage : cscript //nologo json.vbs /r /s /100 [target.txt]"
-		wscript.echo "		/r   ... Printout Raw Style (default is Shaped Style)"
+		wscript.echo "		/c   ... Printout Compress Style (default is Shaped Style)"
 		wscript.echo "		/s   ... Strict Mode(default is Speed Mode)"
 		wscript.echo "		/u   ... Read As Utf-8(default is Shift-JIS)"
 		wscript.echo "		/o   ... Write Out *.txt(Shift-JIS)"
@@ -441,7 +461,7 @@ sub SelfSub
 
 	n = 1
 	isFast = true
-	isView = true
+	isCompress = false
 	isUtf8 = false
 	putTo = null
 	for i=0 to WScript.Arguments.Count - 1
@@ -451,8 +471,8 @@ sub SelfSub
 				n = cint(mid(WScript.Arguments(i), 2))
 			case "s"
 				isFast = not isFast
-			case "r"
-				isView = not isView
+			case "c"
+				isCompress = not isCompress
 			case "u"
 				isUtf8 = not isUtf8
 			case "o"
@@ -467,12 +487,12 @@ sub SelfSub
 				objFileSys.CopyFile WScript.Arguments(i), temp & "\", true
 
 				for each objFile in objFileSys.GetFolder(temp).files
-					SelfJson objFileSys.buildpath(temp, objFile.name), isView, isUtf8, putTo, n
+					SelfJson objFileSys.buildpath(temp, objFile.name), isCompress, isUtf8, putTo, n
 				next
 
 				objFileSys.deletefolder(temp)
 			else
-				SelfJson WScript.Arguments(i), isView, isUtf8, putTo, n
+				SelfJson WScript.Arguments(i), isCompress, isUtf8, putTo, n
 			end if
 		end if
 	next
