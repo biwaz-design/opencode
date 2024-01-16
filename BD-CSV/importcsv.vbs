@@ -52,7 +52,7 @@ function readfields(objStream, delim)
 	dim chunk, quote, pos, s, i
 
 	s = replace(objStream.readline, chr(0), "")
-	if instr(s, """") <= 0 then
+	if instr("," + s, ",""") <= 0 then
 		if s = "" then readfields = array("") else readfields = split(s, delim)
 		exit function
 	end if

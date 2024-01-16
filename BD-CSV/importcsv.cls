@@ -90,7 +90,7 @@ Attribute VB_Exposed = False
         s = lines_cr(lineno_cr)
         If lineno_cr < UBound(lines_cr) Then lineno_cr = lineno_cr + 1 Else lineno_cr = 0
 
-        If InStr(s, """") <= 0 Then
+        If InStr("," + s, ",""") <= 0 Then
             If s = "" Then readfields = Array("") Else readfields = Split(s, delim)
             Exit Function
         End If

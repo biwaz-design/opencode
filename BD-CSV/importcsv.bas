@@ -52,7 +52,7 @@ Function readfields(objStream, Optional delim As String = ",")
     Dim chunk, quote, pos, s, i
 
     s = Replace(objStream.readline, Chr(0), "")
-    If InStr(s, """") <= 0 Then
+    If InStr("," + s, ",""") <= 0 Then
         If s = "" Then readfields = Array("") Else readfields = Split(s, delim)
         Exit Function
     End If
