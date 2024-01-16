@@ -156,7 +156,7 @@ class csv
 		s = lines_cr(lineno_cr)
 		if lineno_cr < ubound(lines_cr) then lineno_cr = lineno_cr + 1 else lineno_cr = 0
 
-		if instr(s, """") <= 0 then
+		if instr("," + s, ",""") <= 0 then
 			if s = "" then readfields = array("") else readfields = split(s, delim)
 			exit function
 		end if
