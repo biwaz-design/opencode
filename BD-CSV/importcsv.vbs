@@ -1,4 +1,4 @@
-''
+﻿''
 ' VBS csv parse v1.0.0
 ' (c) BIWAZ DESIGN - Takeshi Matsui - https://github.com/biwaz-design/opencode/blob/main/BD-CSV/importcsv.vbs
 '
